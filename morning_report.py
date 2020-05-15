@@ -1,20 +1,6 @@
-import os, requests, logging, sys, config, random, urllib.request, json
-from logging.handlers import RotatingFileHandler
+import config, random, requests
 from bs4 import BeautifulSoup
 from slackclient import SlackClient
-
-filename, file_extension = os.path.splitext(os.path.basename(__file__))
-formatter = logging.Formatter('%(asctime)s - %(levelname)10s - %(module)15s:%(funcName)30s:%(lineno)5s - %(message)s')
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-consoleHandler = logging.StreamHandler(sys.stdout)
-consoleHandler.setFormatter(formatter)
-logger.addHandler(consoleHandler)
-logging.getLogger("requests").setLevel(logging.WARNING)
-logger.setLevel(config.LOG_LEVEL)
-fileHandler = RotatingFileHandler(config.LOG_FOLDER + '/' + filename + '.log', maxBytes=1024 * 1024 * 1, backupCount=1)
-fileHandler.setFormatter(formatter)
-logger.addHandler(fileHandler)
 
 popular_choice = ['age','alone','amazing','anger','anniversary','architecture','art','attitude','beauty','best','birthday','brainy','business','car','chance','change','christmas','communication','computers','cool','courage','dad','dating','death','design','diet','dreams','easter','education','environmental','equality','experience','failure','faith','family','famous','father''s day','fear','finance','fitness','food','forgiveness','freedom','friendship','funny','future','gardening','god','good','government','graduation','great','happiness','health','history','home','hope','humor','imagination','independence','inspirational','intelligence','jealousy','knowledge','leadership','learning','legal','life','love','marriage','medical','memorial day','men','mom','money','morning','mother''s day','motivational','movies','moving on','music','nature','new year''s','parenting','patience','patriotism','peace','pet','poetry','politics','positive','power','relationship','religion','respect','romantic','sad','saint patrick''s day','science','smile','society','space','sports','strength','success','sympathy','teacher','technology','teen','thankful','thanksgiving','time','travel','trust','truth','valentine''s day','veterans day','war','wedding','wisdom','women','work']
 
@@ -63,4 +49,4 @@ if __name__ == "__main__":
 	final_message = "Morning Report\n\nDaily Quote\n\n%s" % get_random_quote()
 	
 	sc = SlackClient(config.slack_api)
-	sc.api_call("chat.postMessage", channel=config.slack_channel, text=final_message, as_user=False)
+	sc.api_call("chat.postMessage", channel=config.report_slack_channel, text=final_message, as_user=False)
