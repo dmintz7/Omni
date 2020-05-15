@@ -1,4 +1,4 @@
-import os, sys, config, requests, logging
+import os, sys, config, logging
 from logging.handlers import RotatingFileHandler
 
 filename, file_extension = os.path.splitext(os.path.basename(__file__))
@@ -53,6 +53,5 @@ if __name__ == "__main__":
 		indiv_folders = 0
 		indiv_removed = 0
 		removeEmptyFolders(path, False)
-		review = "%s%s - %s Folders Scanned, %s Folders Removed\n" % (review, path, indiv_folders, indiv_removed)
-	
-	review = "%sTotal - %s Folders Scanned, %s Folders Removed\n" % (review, total_folders, total_removed)
+		logger.info("%s - %s Folders Scanned, %s Folders Removed" % (path, indiv_folders, indiv_removed))
+

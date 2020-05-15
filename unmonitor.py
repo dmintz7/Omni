@@ -1,4 +1,4 @@
-import os, requests, logging, sys, config, optparse, operator, xmltodict, urllib3
+import os, requests, logging, sys, config, operator, xmltodict, urllib3
 from logging.handlers import RotatingFileHandler
 from plexapi.server import PlexServer
 from datetime import datetime, timedelta

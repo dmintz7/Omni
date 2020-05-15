@@ -1,4 +1,4 @@
-import os, requests, logging, sys, config, subprocess, pymysql
+import os, logging, sys, config, subprocess, pymysql
 from logging.handlers import RotatingFileHandler
 from datetime import datetime
 
