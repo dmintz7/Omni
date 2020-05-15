@@ -1,4 +1,4 @@
-import os, requests, logging, sys, exifread, config, hashlib, shutil
+import os, logging, sys, exifread, config, hashlib, shutil
 from logging.handlers import RotatingFileHandler
 from datetime import datetime
 
