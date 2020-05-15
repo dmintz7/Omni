@@ -260,7 +260,7 @@ def get_xml(url):
 def sendMessage(response, attachments=None):
 	try:
 		sc = SlackClient(config.slack_api)
-		result = sc.api_call("chat.postMessage", channel=config.slack_channel, text=response, as_user=False, attachments=json.dumps(attachments))
+		result = sc.api_call("chat.postMessage", channel=config.findmedia_slack_channel, text=response, as_user=False, attachments=json.dumps(attachments))
 		if str(result['ok']) == 'True':
 			logger.debug("Succesfully Sent Message - %s" % result)
 			return "success"
