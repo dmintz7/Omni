@@ -1,7 +1,6 @@
 import json, os, logging, sys, requests, config
 from logging.handlers import RotatingFileHandler
 from slackclient import SlackClient
-from time import sleep
 import lib.trakt as trakt
 import lib.sodarr as sodarr
 
@@ -68,7 +67,7 @@ def send_to_radarr(a, b, genres, year):
 		sdr = sodarr.API(config.radarr_host + '/api', config.radarr_api)
 		response = sdr.add_movie(payload)
 		try:
-			sdr.command({'name':'MoviesSearch', 'movieIds': response['id']})
+			sdr.command({'name':'MoviesSearch', 'movieIds': [response['id']]})
 			logger.debug("sent to radarr successfully")
 			return True
 		except:
@@ -263,7 +262,7 @@ def filter_list(list_type):
 def sendMessage(response, attachments=None):
 	try:
 		sc = SlackClient(config.slack_api)
-		result = sc.api_call("chat.postMessage", channel=config.slack_channel, text=response, as_user=False, attachments=json.dumps(attachments))
+		result = sc.api_call("chat.postMessage", channel=config.pingrr_slack_channel, text=response, as_user=False, attachments=json.dumps(attachments))
 		if str(result['ok']) == 'True':
 			logger.debug("Succesfully Sent Message - %s" % result)
 			return "success"
