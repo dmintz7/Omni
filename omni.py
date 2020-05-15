@@ -21,7 +21,6 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 sdr = sodarr.API(config.sonarr_host + '/api', config.sonarr_api)
 
 def modify_new():
-	error = False
 	from_profile = sdr.get_profile_id(config.sonarr_from_profile)
 	to_profile = sdr.get_profile_id(config.sonarr_to_profile)
 
@@ -40,13 +39,11 @@ def modify_new():
 				(highest_season, season_count) =  get_highest_season(show)
 				update_show(show, highest_season, season_count, 0)
 		except Exception as e:
-			error = True
 			logger.error('Error on line {}, {}. {}'.format(sys.exc_info()[-1].tb_lineno, type(e).__name__, e))
 	else:
-		if len(series) == 0: logger.info("No New Shows")
+		logger.info("No New Shows")
 
 def session_search():
-	error = False
 	sessions = PlexServer(config.plex_host, config.plex_api).sessions()
 
 	for x in sessions:
@@ -66,15 +63,10 @@ def session_search():
 		if len(sessions) == 0: logger.info("Nothing is Being Watched")
 
 def full_check():
-	error = False
-	from_profile = sdr.get_profile_id(config.sonarr_from_profile)
-	to_profile = sdr.get_profile_id(config.sonarr_to_profile)
-
 	plex = PlexServer(config.plex_host, config.plex_api)
 	users = [ user.title for user in plex.myPlexAccount().users() ]
 	users.insert(0, plex.myPlexAccount().username)
 
-	start=False
 	series = sdr.get_series()
 	for show in random.sample(series, len(series)):
 		try:
@@ -96,8 +88,6 @@ def full_check():
 					logger.info("Monitoring All Episodes for %s" % show['title'])
 		except Exception as e:
 			logger.error('Error on line {}, {}. {}'.format(sys.exc_info()[-1].tb_lineno, type(e).__name__, e))
-			raise
-			error=True
 	else:
 		if len(series) == 0: logger.info("Not Shows Found")
 
@@ -201,9 +191,7 @@ def search_users(series, users, season_number, episode_number):
 
 def find_last_watched(series, users):
 	try:
-		episode_count = 0
 		last_watched = 0
-		all_episodes = sdr.get_episodes_by_series_id(series['id'])
 		(highest_season, season_count) = get_highest_season(series)
 		logger.debug("Checking for Highest Watch Episode in Season %s" % highest_season)
 		last_watched = search_season(series, users, highest_season, season_count)
