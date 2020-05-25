@@ -1,0 +1,76 @@
+LOG_LEVEL="INFO"
+LOG_FOLDER= ""
+pingrr_dry_run=False
+
+#Separate by semicolon
+remote_path_local=""
+remote_path_remote=""
+
+mysql_host=""
+mysql_user=""
+mysql_passwd=""
+
+slack_enabled=True
+slack_api=''
+report_slack_channel=""
+pingrr_slack_channel=""
+findmedia_slack_channel=""
+
+plex_host=""
+plex_api=""
+plex_library=""
+plex_server_owner=""
+plex_media_scanner_path=""
+
+radarr_host=""
+radarr_api=''
+radarr_quality_profile=
+radarr_minimumAvailability=""
+radarr_monitored=True
+radarr_path_root=""
+radarr_search=True
+
+sonarr_enabled=True
+sonarr_host=""
+sonarr_api=""
+sonarr_folder_path=""
+sonarr_genre_paths=False
+sonarr_monitored=False
+sonarr_path_root=""
+sonarr_paths="{}"
+sonarr_quality_profile=
+sonarr_search_missing_episodes=False
+sonarr_from_profile=""
+sonarr_to_profile=""
+
+imdb_info=False
+trakt_api=''
+trakt_limit=50
+trakt_movie_list={"anticipated": True, "popular": True, "trending": True}
+trakt_tv_list={"anticipated": True, "popular": True, "trending": True}
+filters_allow_canceled=True
+filters_allow_ended=True
+filters_country=["" ]
+filters_genre=[""]
+filters_language="en"
+filters_network=[""]
+filters_rating=
+filters_runtime=
+filters_votes=
+filters_year={"movies": 0, "shows": 0}
+
+backup_path = ""
+photo_path = ""
+photo_temp_path = ""
+
+#Separate by semicolon
+empty_folder_path = ""
+
+unmonitor_shows_users = {
+	#Example ("name_of_show_in_sonarr", tuple(["User1", "User2"]), number_of_days_for_remonitor)
+}
+
+health_checks_base_url = ''
+application_apps = {
+	#Example - (Name, host, post, health_checks_api), 
+}
