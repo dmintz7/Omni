@@ -66,9 +66,6 @@ photo_temp_path = ""
 #Separate by semicolon
 empty_folder_path = ""
 
-unmonitor_shows_users = {
-	#Example ("name_of_show_in_sonarr", tuple(["User1", "User2"]), number_of_days_for_remonitor (use 0 if not using))
-}
 
 health_checks_base_url = ''
 application_apps = {
