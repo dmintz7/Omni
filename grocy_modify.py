@@ -3,6 +3,10 @@ import sqlite3
 path_to_grocy_db = '/containers/grocy/data/grocy.db'
 conn = sqlite3.connect(path_to_grocy_db)
 c = conn.cursor()
+
+c.execute("UPDATE products SET default_best_before_days = (SELECT ROUND(AVG(JulianDay(best_before_date) - JulianDay(purchased_date))) FROM stock_log WHERE best_before_date != '2999-12-31' And transaction_type = 'purchase' AND product_id = products.id GROUP by product_id) WHERE id IN (SELECT products.id FROM stock_log, products WHERE best_before_date != '2999-12-31' And transaction_type = 'purchase' AND product_id = products.id)")
+conn.commit()
+
 c.execute("SELECT id, barcode FROM products where length(barcode) != 0")
 rows = c.fetchall()
 

@@ -17,8 +17,6 @@ fileHandler = RotatingFileHandler(config.LOG_FOLDER + '/' + filename + '.log', m
 fileHandler.setFormatter(formatter)
 logger.addHandler(fileHandler)
 
-error=False
-
 show_user_list = config.unmonitor_shows_users
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -204,29 +202,30 @@ if __name__ == "__main__":
 		series = sdr.get_series()
 		cleanup_series = {}
 		for show in series:
-			try:	
+			if show == "error":
+				logger.error("Can't Connect to Sonarr")
+			else:
 				try:
-					index = shows.index(show['cleanTitle'])
-					user = list(users[index])
-					num_days = remonitor[index]
-				except ValueError:
-					index = -1
-				
-				if index != -1:
-					clean_title = show['cleanTitle']
-					logger.info("Checking %s" % clean_title)
-					series_id = show['id']
-					series_title = show['title']
-					if  "remonitor" in user:
-						user.remove('remonitor')
-						remonitor_episodes(series_id, clean_title, num_days)
-					count = clean_series(series_id, series_title, user)
-					review+="%s episode removed for %s\n" % (0 if count is None else count, series_title)
-			except Exception as e:
-				logger.error("Error Unmonitoring Episodes for %s - %s" % (show, e))
-				error=True
+					try:
+						index = shows.index(show['cleanTitle'])
+						user = list(users[index])
+						num_days = remonitor[index]
+					except ValueError:
+						index = -1
+					
+					if index != -1:
+						clean_title = show['cleanTitle']
+						logger.info("Checking %s" % clean_title)
+						series_id = show['id']
+						series_title = show['title']
+						if  "remonitor" in user:
+							user.remove('remonitor')
+							remonitor_episodes(series_id, clean_title, num_days)
+						count = clean_series(series_id, series_title, user)
+						review+="%s episode removed for %s\n" % (0 if count is None else count, series_title)
+				except Exception as e:
+					logger.error("Error Unmonitoring Episodes for %s - %s" % (show, e))
 				
 	except Exception as e:
-		error=True
 		logger.error("Error Running Unmonitor Episodes")
 		logger.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno, type(e).__name__, e))
