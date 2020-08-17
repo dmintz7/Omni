@@ -1,8 +1,7 @@
-import sys, time, xmltodict, requests, config, optparse, plexapi.exceptions, logging, os, urllib3, random
+import sys, time, xmltodict, requests, config, optparse, plexapi.exceptions, logging, os, urllib3, random, sodarr
 from logging.handlers import RotatingFileHandler
 from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_DOWN
 from plexapi.server import PlexServer
-import lib.sodarr as sodarr
 
 filename, file_extension = os.path.splitext(os.path.basename(__file__))
 formatter = logging.Formatter('%(asctime)s - %(levelname)10s - %(module)15s:%(funcName)30s:%(lineno)5s - %(message)s')
@@ -281,7 +280,6 @@ class DisableLogger():
 		logging.disable(logging.CRITICAL)
 	def __exit__(self, a, b, c):
 		logging.disable(logging.NOTSET)
-		
 		
 if __name__ == "__main__":
 	error = False
