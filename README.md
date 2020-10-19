@@ -26,3 +26,6 @@ New episodes are monitored and downloaded based on the following rules:
 
 
 I recommend running the scripts using cron with modify_new and session_search running every 5 minutes and full_check every 12 hours
+
+Needed Updates
+* Change tag number to volatile based on name 
