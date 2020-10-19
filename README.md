@@ -25,4 +25,4 @@ New episodes are monitored and downloaded based on the following rules:
  * If any season is 8 or less episodes, monitor the whole season
 
 
-I recommended to run using cron with modify_new and session_search running every 5 minutes and full_check every 12 hours
+I recommend running the scripts using cron with modify_new and session_search running every 5 minutes and full_check every 12 hours
