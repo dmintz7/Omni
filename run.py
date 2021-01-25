@@ -12,12 +12,10 @@ consoleHandler.setFormatter(formatter)
 logger.addHandler(consoleHandler)
 logging.getLogger("requests").setLevel(logging.WARNING)
 logger.setLevel(config.LOG_LEVEL)
-fileHandler = RotatingFileHandler(config.LOG_FOLDER + '/Omni- ' + funcName +'.log', maxBytes=1024 * 1024 * 1, backupCount=1)
+fileHandler = RotatingFileHandler(config.LOG_FOLDER + '/Omni.log', maxBytes=1024 * 1024 * 1, backupCount=1)
 fileHandler.setFormatter(formatter)
 logger.addHandler(fileHandler)
 logger = logging.LoggerAdapter(logger, extra)
-
-
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 sdr = sodarr.API(config.sonarr_host + '/api', config.sonarr_api)
