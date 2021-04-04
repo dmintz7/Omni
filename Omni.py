@@ -23,10 +23,12 @@ def modify_new():
 	from_profile = sdr.get_profile_id(config.sonarr_from_profile)
 	to_profile = sdr.get_profile_id(config.sonarr_to_profile)
 
+	update_total = 0
 	series = sdr.get_series()
 	for show in series:
 		try:
 			if show['profileId'] == from_profile:
+				update_total+=1
 				logger.info("New Show (%s) Found for Omni, Making Initial Changes" % show['title'])
 				show['tags'] = [2]
 				show['qualityProfileId'] = to_profile
@@ -34,13 +36,11 @@ def modify_new():
 				show['monitored'] = True
 				for x in show['seasons']: x['monitored'] = False
 				sdr.upd_series(show)
-
 				(highest_season, season_count) =  get_highest_season(show)
 				update_show(show, highest_season, season_count, 0)
 		except Exception as e:
 			logger.error('Error on line {}, {}. {}'.format(sys.exc_info()[-1].tb_lineno, type(e).__name__, e))
-	else:
-		logger.info("No New Shows")
+	if not update_total: logger.info("No New Shows")
 
 def session_search():
 	sessions = PlexServer(config.plex_host, config.plex_api).sessions()
