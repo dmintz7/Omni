@@ -85,6 +85,10 @@ def full_check():
 					update_show(show, highest_season, season_count, last_watched)
 				else:
 					logger.info("Monitoring All Episodes for %s" % show['title'])
+					if show['status'] == 'ended':
+						logger.info("Show has Ended. Removing Tag")
+						show['tags'] = []
+						sdr.upd_series(show)
 		except Exception as e:
 			logger.error('Error on line {}, {}. {}'.format(sys.exc_info()[-1].tb_lineno, type(e).__name__, e))
 	else:
