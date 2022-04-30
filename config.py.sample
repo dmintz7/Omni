@@ -1,11 +1,26 @@
-LOG_LEVEL="INFO"
-LOG_FOLDER= ""
+log_level = "info"
+log_folder = "/app/logs/"
 
-plex_host=""
-plex_api=""
-plex_library=""
+plex_host = ""
+plex_api = ""
+plex_library = ""
 
-sonarr_host=""
-sonarr_api=""
-sonarr_from_profile=""
-sonarr_to_profile=""
+sonarr_host = ""
+sonarr_api = ""
+
+sonarr_from_profile = "Hold"
+sonarr_to_profile = "Best"
+tag_id = 
+max_results = 10
+
+min_season_episodes = 5
+max_season_episodes = 8
+watch_season_episodes = 3
+season_percent_complete = .75
+
+
+host = ""
+port = 
+user = ""
+passwd = ""
+dbname = ""

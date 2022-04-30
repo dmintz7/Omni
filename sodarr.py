@@ -1,8 +1,12 @@
-import requests, config, logging
+import config
+import logging
+import requests
+import sys
 
 logger = logging.getLogger(__name__)
 
 requests.adapters.DEFAULT_RETRIES = 5
+
 
 def get_sonarr_library():
 	"""Get sonarr library in a list of tvdbid ids"""
@@ -21,22 +25,6 @@ def get_sonarr_library():
 		sys.exit(1)
 	return library
 
-def get_radarr_library():
-	"""Get radarr library in a list of imdb ids"""
-	library = []
-	headers = {'X-Api-Key': config.radarr_api}
-	r = requests.get(config.radarr_host + '/api/movie', headers=headers, timeout=60)
-	try:
-		if r.status_code == 401:
-			logger.warning("Error when connecting to radarr, unauthorised. check api/url")
-			sys.exit(1)
-		movie_lib_raw = r.json()
-		for n in movie_lib_raw:
-			library.append(n['tmdbId'])
-	except requests.ConnectionError:
-		logger.warning("Can not connect to radarr check if radarr is up, or URL is right")
-		sys.exit(1)
-	return library
 
 class API(object):
 
@@ -55,8 +43,9 @@ class API(object):
 	def get_profile_id(self, name):
 		profiles = self.get_quality_profiles()
 		for profile in profiles:
-			if profile['name'] == name: return profile['id']
-			
+			if profile['name'] == name:
+				return profile['id']
+
 	# ENDPOINT COMMAND
 	def command(self, command_json):
 		res = self.request_post("{}/command".format(self.host_url), data=command_json)
@@ -79,15 +68,11 @@ class API(object):
 		res = self.request_get("{}/episode/{}".format(self.host_url, episode_id))
 		return res.json()
 
+	# TEST THIS
 	def upd_episode(self, data):
-		#TEST THIS
-		"""Update the given episodes, currently only monitored is changed, all other modifications are ignored"""
-		'''NOTE: All parameters (you should perform a GET/{id} and submit the full body with the changes,
-		as other values may be editable in the future.'''
 		res = self.request_put("{}/episode".format(self.host_url), data)
 		return res.json()
 
-	# ENDPOINT EPISODE FILE
 	def get_episode_files_by_series_id(self, series_id):
 		"""Returns all episode files for the given series"""
 		res = self.request_get("{}/episodefile?seriesId={}".format(self.host_url, series_id))
@@ -133,9 +118,7 @@ class API(object):
 
 	# ENDPOINT RELEASE
 
-
 	# ENDPOINT RELEASE/PUSH
-
 
 	# ENDPOINT ROOTFOLDER
 	def get_root_folder(self):
@@ -163,9 +146,9 @@ class API(object):
 		res = self.request_get("{}/series/{}".format(self.host_url, series_id))
 		return res.json()
 
-	def constuct_series_json(self, tvdbId, quality_profile):
+	def constuct_series_json(self, tvdb_id, quality_profile):
 		"""Searches for new shows on trakt and returns Series object to add"""
-		res = self.request_get("{}/series/lookup?term={}".format(self.host_url, 'tvdbId:' + str(tvdbId)))
+		res = self.request_get("{}/series/lookup?term={}".format(self.host_url, 'tvdbId:' + str(tvdb_id)))
 		s_dict = res.json()[0]
 
 		# get root folder path
@@ -177,21 +160,20 @@ class API(object):
 			'qualityProfileId': quality_profile,
 			'seasonFolder': True,
 			'monitored': True,
-			'tvdbId': tvdbId,
+			'tvdbId': tvdb_id,
 			'images': s_dict['images'],
 			'titleSlug': s_dict['titleSlug'],
 			"addOptions": {
-						  "ignoreEpisodesWithFiles": True,
-						  "ignoreEpisodesWithoutFiles": True
-						}
-					}
+				"ignoreEpisodesWithFiles": True,
+				"ignoreEpisodesWithoutFiles": True
+			}
+		}
 		return series_json
 
 	def add_movie(self, movie_json):
 		"""Add a new series to your collection"""
 		res = self.request_post("{}/movie".format(self.host_url), data=movie_json)
 		return res.json()
-
 
 	def add_series(self, series_json):
 		"""Add a new series to your collection"""
@@ -215,8 +197,8 @@ class API(object):
 		"""Delete the series with the given ID"""
 		# File deletion does not work
 		data = {
-			# 'id': series_id,
-			'deleteFiles': 'true'
+			'id': series_id,
+			'deleteFiles': rem_files,
 		}
 		res = self.request_del("{}/series/{}".format(self.host_url, series_id), data)
 		return res.json()
