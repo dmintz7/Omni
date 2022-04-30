@@ -2,14 +2,13 @@ version: '2'
 services:
   omni:
     container_name: omni
-    image: dmintz7/omni
+    image: dmintz37/omni
     build: .
     ports:
       - 32700:80
     volumes:
       - PATH_TO_LOG_FOLDER:/app/logs
     environment:
-      - WEB_ROOT=/omni/
       - TZ=UTC
       - LOG_LEVEL=INFO
     restart: unless-stopped

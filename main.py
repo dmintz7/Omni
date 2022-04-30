@@ -510,8 +510,6 @@ app = Flask(__name__)
 
 @app.route('/plex', methods=['POST'])
 def plex_webhook():
-	global logger
-	logger = logging.getLogger(__name__)
 	content = json.loads(request.form["payload"])
 	event = content['event']
 	logger.info("Received Plex Webhook - %s" % event)
