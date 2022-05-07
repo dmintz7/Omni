@@ -19,10 +19,10 @@ import sys
 from logging.handlers import TimedRotatingFileHandler
 from plexapi.server import PlexServer
 
-os.chmod(config.log_folder, 0o777)
 formatter = logging.Formatter('%(asctime)s - %(levelname)10s - %(module)15s:%(funcName)30s:%(lineno)5s - %(message)s')
 logger = logging.getLogger()
-logger.setLevel("DEBUG")
+logger.setLevel("INFO")
+
 
 consoleHandler = logging.StreamHandler(sys.stdout)
 consoleHandler.setFormatter(formatter)
@@ -122,7 +122,7 @@ def update_show(show_id=None, plex_id=None):
 			max_season += 1
 			max_episode = int(config.min_season_episodes)
 
-		if max_season > monitor_season or (max_season == monitor_season and max_episode > monitor_episode):
+		if not (max_season == monitor_season and max_episode == monitor_episode):
 			num_changed += int(mark_episodes(series, max_season, max_episode))
 			logger.info("%s - %s Episodes Updated - Monitor to S%sE%s - Last Watched S%sE%s" % (series['title'], num_changed, max_season, max_episode, last_season, last_episode))
 			if num_changed > 0:
@@ -130,6 +130,7 @@ def update_show(show_id=None, plex_id=None):
 					sdr.command({'name': 'SeriesSearch', 'seriesId': series['id']})
 					logger.info("%s Episodes for %s changed to monitor, sending search command" % (num_changed, series['title']))
 					execute_sql("update", table={"shows"}, set={"last_monitor_season": max_season, "last_monitor_episode": max_episode}, where={"id": series['id']})
+					update_monitored(show_id=series['id'])
 				except Exception as e:
 					logger.error('Error! Line: {l}, Code: {c}, Message, {m}'.format(l=sys.exc_info()[-1].tb_lineno, c=type(e).__name__, m=str(e)))
 			else:
@@ -148,6 +149,9 @@ def mark_episodes(series, max_season, max_episode):
 		monitor = False
 		if max_season >= x['seasonNumber'] > 0:
 			monitor = True
+
+		if x['monitored'] != monitor:
+			count += x['statistics']['totalEpisodeCount']
 		x['monitored'] = monitor
 	sdr.upd_series(series)
 	
@@ -233,10 +237,9 @@ def update_monitored(show_id=None):
 				max_episode = 0
 				all_episodes = sorted(sdr.get_episodes_by_series_id(show['id']), key=lambda i: (i['seasonNumber'], i['episodeNumber']))
 				for episode in all_episodes:
-					if not episode['monitored'] and episode['seasonNumber'] > 0:
-						break
-					max_season = episode['seasonNumber']
-					max_episode = episode['episodeNumber']
+					if episode['monitored'] and episode['seasonNumber'] > 0:
+						max_season = episode['seasonNumber']
+						max_episode = episode['episodeNumber']
 
 				execute_sql("update", table={"shows"}, set={"last_monitor_season": max_season, "last_monitor_episode": max_episode}, where={"id": show['id']})
 
@@ -264,7 +267,8 @@ def add_plex(show_id=None):
 				except IndexError:
 					logger.warning("Show: %s Not Found in Plex" % show['title'])
 
-			return plex_id
+			if show_id is not None:
+				return plex_id
 		except Exception as e:
 			logger.error('Error on line {}, {}. {}'.format(sys.exc_info()[-1].tb_lineno, type(e).__name__, e))
 
@@ -343,7 +347,7 @@ def recently_watched():
 			except plexapi.exceptions.Unauthorized:
 				pass
 
-		for x in list(set(watched_shows)):
+		for show_id in list(set(watched_shows)):
 			update_monitored(show_id=show_id)
 			update_show(show_id=show_id)
 	except Exception as e:
@@ -471,6 +475,8 @@ def refresh_database():
 	global plex_api
 	global sdr
 
+	os.chmod(config.log_folder, 0o777)
+
 	try:
 		plex_api = PlexServer(config.plex_host, config.plex_api)
 	except Exception as e:
@@ -513,12 +519,12 @@ def plex_webhook():
 	content = json.loads(request.form["payload"])
 	event = content['event']
 	logger.info("Received Plex Webhook - %s" % event)
-	if event == "media.scrobble" or event == "library.new":
-		item = content['Metadata']
-		logger.info(item)
-		if item['librarySectionTitle'] == config.plex_library:
-			plex_id = item['grandparentRatingKey']
+	item = content['Metadata']
+	if item['librarySectionTitle'] == config.plex_library:
+		if event == "media.scrobble":
 			user_id = [user['id'] for user in users if user['username'] == content['Account']['title']][0]
+			plex_id = item['grandparentRatingKey']
+
 			watch_season = int(item['parentIndex'])
 			watch_episode = int(item['index'])
 			user_history = execute_sql("select", select={"show_id", "show_title", "plex", "user_id", "username", "last_watch_season", "last_watch_episode"}, table={"last_watched"}, where={"plex": plex_id, "user_id": user_id})
@@ -530,8 +536,17 @@ def plex_webhook():
 				logger.debug("Not a Tagged Show")
 			except Exception as e:
 				logger.error('Error on line {}, {}. {}'.format(sys.exc_info()[-1].tb_lineno, type(e).__name__, e))
-		else:
-			logger.debug("Not a TV Show")
+		elif event == "library.new":
+			plex_id = item['ratingKey']
+			show_title = item['title']
+			execute_sql("update", table={"shows"}, set={"plex": plex_id}, where={"title": show_title, "plex": None})
+			refresh_database()
+			update_show(plex_id=plex_id)
+	else:
+		logger.debug("Not a TV Show")
+
+
+
 	return make_response("", 200)
 
 
@@ -545,11 +560,25 @@ class Config(object):
 	]
 
 
+# try:
+# 	plex_api = PlexServer(config.plex_host, config.plex_api)
+# except Exception as e:
+# 	logger.error('Error on line {} - {} - {}'.format(type(e).__name__, sys.exc_info()[-1].tb_lineno, e))
+# 	plex_api = None
+# 	logger.error("Can't Connect to Plex")
+#
+# try:
+# 	sdr = sodarr.API(config.sonarr_host + '/api', config.sonarr_api)
+# except Exception as e:
+# 	logger.error('Error on line {} - {} - {}'.format(type(e).__name__, sys.exc_info()[-1].tb_lineno, e))
+# 	sdr = None
+# 	logger.error("Can't Connect to Sonarr")
+#
+# users = execute_sql("select", select={"id", "username", "token"}, table={"users"})
+# shows = execute_sql("select", select={"id", "title", "tvdb", "plex"}, table={"shows"})
+
 refresh_database()
 app.config.from_object(Config())
 scheduler = APScheduler()
 scheduler.init_app(app)
 scheduler.start()
-
-if __name__ == "__main__":
-	app.run(host="0.0.0.0", port=32600, debug=True)

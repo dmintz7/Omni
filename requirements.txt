@@ -1,4 +1,4 @@
-PlexAPI==4.2.0
+PlexAPI>=4.10.0
 PyMySQL==0.10.1
 requests==2.21.0
 Flask==2.1.0
