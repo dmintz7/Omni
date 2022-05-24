@@ -21,7 +21,7 @@ from plexapi.server import PlexServer
 
 formatter = logging.Formatter('%(asctime)s - %(levelname)10s - %(module)15s:%(funcName)30s:%(lineno)5s - %(message)s')
 logger = logging.getLogger()
-logger.setLevel("INFO")
+logger.setLevel(config.log_level.upper())
 
 
 consoleHandler = logging.StreamHandler(sys.stdout)
@@ -134,9 +134,9 @@ def update_show(show_id=None, plex_id=None):
 				except Exception as e:
 					logger.error('Error! Line: {l}, Code: {c}, Message, {m}'.format(l=sys.exc_info()[-1].tb_lineno, c=type(e).__name__, m=str(e)))
 			else:
-				logger.debug("No Updates Needed")
+				logger.info("No Updates Needed")
 		else:
-			logger.debug("No Updates Needed")
+			logger.info("No Updates Needed")
 
 
 def mark_episodes(series, max_season, max_episode):
@@ -200,23 +200,29 @@ def get_watched(plex_id=None, user_id=None):
 				except TypeError:
 					continue
 			logger.debug("Checking Show: %s" % show['title'])
-			plex_series = list(filter(lambda x: (int(x.ratingKey) == int(show['plex'])), plex_shows))[0]
-			last_season = 1
-			last_episode = 0
-			for episode in plex_series.episodes():
-				if episode.isWatched:
-					last_season = episode.seasonNumber
-					last_episode = episode.index
-				else:
-					try:
-						if config.must_watch_previous:
-							break
-					except AttributeError:
-						pass
+			try:
+				plex_series = list(filter(lambda x: (int(x.ratingKey) == int(show['plex'])), plex_shows))[0]
+				logger.debug(plex_series)
 
-			logger.info("Updating Show: %s to S%sE%s for User: %s" % (show['title'], last_season, last_episode, user['username']))
-			logger.debug(plex_series)
-			execute_sql("insert", table={"usersWatch"}, values={"showId": show['id'], "userId": user['id'], "last_watch_season": last_season, "last_watch_episode": last_episode}, on_duplicate={"last_watch_season": last_season, "last_watch_episode": last_episode})
+				last_season = 1
+				last_episode = 0
+				for episode in plex_series.episodes():
+					if episode.isWatched:
+						last_season = episode.seasonNumber
+						last_episode = episode.index
+					else:
+						try:
+							if config.must_watch_previous:
+								break
+						except AttributeError:
+							pass
+
+				logger.info("Updating Show: %s to S%sE%s for User: %s" % (show['title'], last_season, last_episode, user['username']))
+				execute_sql("insert", table={"usersWatch"}, values={"showId": show['id'], "userId": user['id'], "last_watch_season": last_season, "last_watch_episode": last_episode}, on_duplicate={"last_watch_season": last_season, "last_watch_episode": last_episode})
+			except IndexError:
+				logger.error("Show: %s Not Found in Plex" % show['title'])
+				execute_sql("update", table={"shows"}, set={"plex": None}, where={"id": show['id']})
+#
 
 
 def update_monitored(show_id=None):
@@ -544,8 +550,6 @@ def plex_webhook():
 			update_show(plex_id=plex_id)
 	else:
 		logger.debug("Not a TV Show")
-
-
 
 	return make_response("", 200)
 
