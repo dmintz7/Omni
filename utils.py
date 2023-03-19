@@ -35,24 +35,21 @@ def modify_new():
 				logger.info("New Show (%s) Found for Omni, Making Initial Changes" % show['title'])
 				show['tags'] += [config.tag_id]
 				show['qualityProfileId'] = to_profile
-				# show['profileId'] = to_profile
 				show['monitored'] = False
 				for x in show['seasons']:
 					x['monitored'] = False
 				sdr.upd_series(show)
 
-				show_id = add_show(show_id=show['id'])
-				if not show_id:
-					show_id = show['id']
+				add_show(show_id=show['id'])
 				refresh_database()
-				plex_id = add_plex(show_id=show_id)
+				plex_id = add_plex(show_id=show['id'])
 				if plex_id is not None:
 					get_watched(plex_id=plex_id)
-				update_monitored(show_id=show_id)
-				update_show(show_id=show_id)
+				update_monitored(show_id=show['id'])
+				update_show(show_id=show['id'])
 		except Exception as e:
 			logger.error('Error on line {}, {}. {}'.format(sys.exc_info()[-1].tb_lineno, type(e).__name__, e))
-			raise
+
 	if not update_total:
 		logger.info("No New Shows")
 
@@ -303,7 +300,6 @@ def add_plex(show_id=None):
 
 
 def add_show(show_id=None):
-	new_show_id = None
 	logger.info("Adding Tagged Show(s) to Database for %s" % (show_id if show_id else "All Shows"))
 	series = sdr.get_series()
 	for show in series:
@@ -314,16 +310,12 @@ def add_show(show_id=None):
 			except TypeError:
 				continue
 		try:
-			if show['id'] in [x['id'] for x in shows]:
-				continue
 			if config.tag_id in show['tags']:
-				logger.info("Added Show: %s" % show['title'])
-				new_show_id = execute_sql("insert", table={"shows"}, values={"id": show['id'], "title": show['title'], "year": show['year'], "status": show['status'], "tvdb": show['tvdbId']}, on_duplicate={"id": show['id']}, returnValue="id")
+				execute_sql("insert", table={"shows"}, values={"id": show['id'], "title": show['title'], "year": show['year'], "status": show['status'], "tvdb": show['tvdbId']}, on_duplicate={"id": show['id']}, returnValue="id")
+				logger.info("Added Show: %s, Id: %s" % (show['title'], show['id']))
 		except Exception as e:
 			logger.error('Error on line {}, {}. {}'.format(sys.exc_info()[-1].tb_lineno, type(e).__name__, e))
 
-	if show_id:
-		return new_show_id
 
 
 # noinspection PyTypeChecker
