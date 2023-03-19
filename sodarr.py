@@ -2,6 +2,7 @@ import config
 import logging
 import requests
 import sys
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -9,7 +10,7 @@ requests.adapters.DEFAULT_RETRIES = 5
 
 
 def get_sonarr_library():
-	"""Get sonarr library in a list of tvdbid ids"""
+	"""Get sonarr library in a list of tvdb ids"""
 	library = []
 	headers = {'X-Api-Key': config.sonarr_api}
 	r = requests.get(config.sonarr_host + '/api/series', headers=headers, timeout=60)
@@ -26,6 +27,7 @@ def get_sonarr_library():
 	return library
 
 
+# noinspection SpellCheckingInspection
 class API(object):
 
 	def __init__(self, host_url, api_key):
@@ -113,7 +115,7 @@ class API(object):
 	# ENDPOINT PROFILE
 	def get_quality_profiles(self):
 		"""Gets all quality profiles"""
-		res = self.request_get("{}/profile".format(self.host_url))
+		res = self.request_get("{}/qualityprofile".format(self.host_url))
 		return res.json()
 
 	# ENDPOINT RELEASE
@@ -184,6 +186,11 @@ class API(object):
 		res = self.request_get("{}/login".format(self.host_url))
 		return res.json()
 
+	def monitor_episodes(self, episode_ids, status):
+		data = {"episodeIds": episode_ids, "monitored": status}
+		res = self.request_put("{}/episode/monitor".format(self.host_url), data)
+		return res.json()
+
 	def upd_series(self, data):
 		"""Update an existing series"""
 		res = self.request_put("{}/series".format(self.host_url), data)
@@ -196,10 +203,7 @@ class API(object):
 	def rem_series(self, series_id, rem_files=False):
 		"""Delete the series with the given ID"""
 		# File deletion does not work
-		data = {
-			'id': series_id,
-			'deleteFiles': rem_files,
-		}
+		data = {'id': series_id, 'deleteFiles': rem_files}
 		res = self.request_del("{}/series/{}".format(self.host_url, series_id), data)
 		return res.json()
 
@@ -216,34 +220,52 @@ class API(object):
 		return res.json()
 
 	# REQUESTS STUFF
-	def request_get(self, url, data={}):
+	def request_get(self, url, data=None):
 		"""Wrapper on the requests.get"""
+		if data is None:
+			data = {}
 		headers = {
 			'X-Api-Key': self.api_key
 		}
-		res = requests.get(url, headers=headers, json=data)
-		return res
-
+		try:
+			res = requests.get(url, headers=headers, json=data)
+			return res
+		except Exception as e:
+			logger.error('Error! Line: {l}, Code: {c}, Message, {m}'.format(l=sys.exc_info()[-1].tb_lineno, c=type(e).__name__, m=str(e)))
+			return None
 	def request_post(self, url, data):
 		"""Wrapper on the requests.post"""
 		headers = {
 			'X-Api-Key': self.api_key
 		}
-		res = requests.post(url, headers=headers, json=data)
-		return res
-
+		try:
+			res = requests.post(url, headers=headers, json=data)
+			return res
+		except Exception as e:
+			logger.error('Error! Line: {l}, Code: {c}, Message, {m}'.format(l=sys.exc_info()[-1].tb_lineno, c=type(e).__name__, m=str(e)))
+			return None
 	def request_put(self, url, data):
 		"""Wrapper on the requests.put"""
 		headers = {
 			'X-Api-Key': self.api_key
 		}
-		res = requests.put(url, headers=headers, json=data)
-		return res
+		try:
+			res = requests.put(url, headers=headers, json=data)
+			return res
+		except Exception as e:
+			logger.error('Error! Line: {l}, Code: {c}, Message, {m}'.format(l=sys.exc_info()[-1].tb_lineno, c=type(e).__name__, m=str(e)))
+			return None
 
-	def request_del(self, url, data={}):
+	def request_del(self, url, data=None):
 		"""Wrapper on the requests.delete"""
+		if data is None:
+			data = {}
 		headers = {
 			'X-Api-Key': self.api_key
 		}
-		res = requests.delete(url, headers=headers, json=data)
-		return res
+		try:
+			res = requests.delete(url, headers=headers, json=data)
+			return res
+		except Exception as e:
+			logger.error('Error! Line: {l}, Code: {c}, Message, {m}'.format(l=sys.exc_info()[-1].tb_lineno, c=type(e).__name__, m=str(e)))
+			return None

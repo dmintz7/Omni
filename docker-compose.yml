@@ -5,7 +5,7 @@ services:
     image: dmintz37/omni
     build: .
     ports:
-      - 32700:80
+      - "32700:80"
     volumes:
       - PATH_TO_LOG_FOLDER:/app/logs
     environment:

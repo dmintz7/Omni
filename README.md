@@ -22,7 +22,7 @@ Script as three different settings:
 New episodes are monitored and downloaded based on the following rules:
  * If episode 3 is being watched/has been watched, monitor the rest of the season
  * If 75% or more of the season has been watched, monitor the first 5 episodes of the next season
- * If any season is 8 or less episodes, monitor the whole season
+ * If any season is 8 or fewer episodes, monitor the whole season
 
 
 I recommend running the scripts using cron with modify_new and session_search running every 5 minutes and full_check every 12 hours
