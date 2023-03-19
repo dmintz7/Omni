@@ -41,13 +41,15 @@ def modify_new():
 					x['monitored'] = False
 				sdr.upd_series(show)
 
-				add_show(show_id=show['id'])
+				show_id = add_show(show_id=show['id'])
+				if not show_id:
+					show_id = show['id']
 				refresh_database()
-				plex_id = add_plex(show_id=show['id'])
+				plex_id = add_plex(show_id=show_id)
 				if plex_id is not None:
 					get_watched(plex_id=plex_id)
-				update_monitored(show_id=show['id'])
-				update_show(show_id=show['id'])
+				update_monitored(show_id=show_id)
+				update_show(show_id=show_id)
 		except Exception as e:
 			logger.error('Error on line {}, {}. {}'.format(sys.exc_info()[-1].tb_lineno, type(e).__name__, e))
 			raise
@@ -98,8 +100,9 @@ def update_show(show_id=None, plex_id=None):
 		except KeyError:
 			remaining_episodes = 0
 
-		if remaining_episodes == 0:
+		if remaining_episodes == 0 and series['monitored']:
 			logger.info("Monitoring All Episodes for %s" % series['title'])
+			mark_episodes(series, 9999, 9999, True)
 			continue
 
 		for season in series['seasons']:
@@ -136,9 +139,10 @@ def update_show(show_id=None, plex_id=None):
 			logger.error('Error! Line: {l}, Code: {c}, Message, {m}'.format(l=sys.exc_info()[-1].tb_lineno, c=type(e).__name__, m=str(e)))
 
 
-def mark_episodes(series, max_season, max_episode):
+def mark_episodes(series, max_season, max_episode, all_episodes=False):
 	count = 0
-	logger.info("Marking Episodes up to S%sE%s" % (max_season, max_episode))
+	if not all_episodes:
+		logger.info("Marking Episodes up to S%sE%s" % (max_season, max_episode))
 
 	logger.debug("Marking Seasons")
 	series['monitored'] = True
@@ -238,8 +242,6 @@ def get_watched(plex_id=None, user_id=None):
 			execute_sql("insert", table={"usersWatch"}, values={"showId": show['id'], "userId": user['id'], "last_watch_season": last_season, "last_watch_episode": last_episode}, on_duplicate={"last_watch_season": last_season, "last_watch_episode": last_episode})
 
 
-
-
 def update_monitored(show_id=None):
 	logger.info("Updating Monitor Season and Episode from Sonarr for %s" % (show_id if show_id else "All Shows"))
 	series = sdr.get_series()
@@ -301,6 +303,7 @@ def add_plex(show_id=None):
 
 
 def add_show(show_id=None):
+	new_show_id = None
 	logger.info("Adding Tagged Show(s) to Database for %s" % (show_id if show_id else "All Shows"))
 	series = sdr.get_series()
 	for show in series:
@@ -315,10 +318,12 @@ def add_show(show_id=None):
 				continue
 			if config.tag_id in show['tags']:
 				logger.info("Added Show: %s" % show['title'])
-				execute_sql("insert", table={"shows"}, values={"id": show['id'], "title": show['title'], "year": show['year'], "status": show['status'], "tvdb": show['tvdbId']}, returnValue="id")
-
+				new_show_id = execute_sql("insert", table={"shows"}, values={"id": show['id'], "title": show['title'], "year": show['year'], "status": show['status'], "tvdb": show['tvdbId']}, on_duplicate={"id": show['id']}, returnValue="id")
 		except Exception as e:
 			logger.error('Error on line {}, {}. {}'.format(sys.exc_info()[-1].tb_lineno, type(e).__name__, e))
+
+	if show_id:
+		return new_show_id
 
 
 # noinspection PyTypeChecker
