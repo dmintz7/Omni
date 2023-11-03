@@ -249,18 +249,20 @@ def get_watched(plex_id=None, user_id=None):
 def update_status():
 	current_sonarr = sdr.get_series()
 	for show in shows:
+		series = list(filter(lambda x: x['id'] == show['id'], current_sonarr))[0]
 		# if show['status'] == 'ended':
 		# 	logger.debug("Id: %s Show: %s, show has ended %s" % (show['id'], series['title'], show['status']))
 		# 	continue
+		try:
+			if series['status'] == show['status']:
+				logger.debug("Id: %s Show: %s, status already %s" % (show['id'], series['title'], show['status']))
+				continue
 
-		series = list(filter(lambda x: x['id'] == show['id'], current_sonarr))[0]
-		if series['status'] == show['status']:
-			logger.debug("Id: %s Show: %s, status already %s" % (show['id'], series['title'], show['status']))
-			continue
-
-		logger.info("Id: %s Show: %s, updating status from %s to %s" % (show['id'], series['title'], show['status'], series['status']))
-		execute_sql("update", table={"shows"}, set={"status": series['status'], "year": series['year']}, where={"id": show['id']})
-
+			logger.info("Id: %s Show: %s, updating status from %s to %s" % (show['id'], series['title'], show['status'], series['status']))
+			execute_sql("update", table={"shows"}, set={"status": series['status'], "year": series['year']}, where={"id": show['id']})
+		except Exception as e:
+			logger.error('Error on line {}, {}. {}'.format(sys.exc_info()[-1].tb_lineno, type(e).__name__, e))
+			logger.error(show)
 
 def update_monitored(show_id=None):
 	logger.info("Updating Monitor Season and Episode from Sonarr for %s" % (show_id if show_id else "All Shows"))
@@ -346,32 +348,36 @@ def add_show(show_id=None):
 def session_search():
 	if plex_api is None:
 		refresh_database()
-	try:
-		for x in plex_api.sessions():
-			logger.info("User: %s is watching %s" % (x.usernames[0], create_plex_title(x)))
-			try:
-				plex_id = x.grandparentRatingKey
-				user_id = [user['id'] for user in users if user['username'] == x.usernames[0]][0]
-				watch_season = int(x.parentIndex)
-				watch_episode = int(x.index)
-				user_history = execute_sql("select", select={"show_id", "show_title", "plex", "user_id", "username", "last_watch_season", "last_watch_episode"}, table={"last_watched"}, where={"plex": plex_id, "user_id": user_id})
+
+	if plex_api:
+		try:
+			for x in plex_api.sessions():
+				logger.info("User: %s is watching %s" % (x.usernames[0], create_plex_title(x)))
 				try:
-					if watch_season > int(user_history[0]['last_watch_season']) or (watch_season == int(user_history[0]['last_watch_season']) and watch_episode > int(user_history[0]['last_watch_episode'])):
-						execute_sql("update", table={"usersWatch"}, set={"last_watch_season": watch_season, "last_watch_episode": watch_episode}, where={"showId": user_history[0]['show_id'], "userId": user_id})
-						logger.debug("Users Watch Updated")
-						update_show(plex_id=plex_id)
-				except IndexError:
-					logger.debug("Not a Tagged Show")
-				except TypeError:
-					logger.debug('Error on line {}, {}. {}'.format(sys.exc_info()[-1].tb_lineno, type(e).__name__, e))
-				except Exception as e:
-					logger.error('Error on line {}, {}. {}'.format(sys.exc_info()[-1].tb_lineno, type(e).__name__, e))
-			except AttributeError:
-				pass
-		if not len(plex_api.sessions()):
-			logger.info("Nothing is Being Watched")
-	except Exception as e:
-		logger.error('Error on line {} - {} - {}'.format(type(e).__name__, sys.exc_info()[-1].tb_lineno, e))
+					plex_id = x.grandparentRatingKey
+					user_id = [user['id'] for user in users if user['username'] == x.usernames[0]][0]
+					watch_season = int(x.parentIndex)
+					watch_episode = int(x.index)
+					user_history = execute_sql("select", select={"show_id", "show_title", "plex", "user_id", "username", "last_watch_season", "last_watch_episode"}, table={"last_watched"}, where={"plex": plex_id, "user_id": user_id})
+					try:
+						if watch_season > int(user_history[0]['last_watch_season']) or (watch_season == int(user_history[0]['last_watch_season']) and watch_episode > int(user_history[0]['last_watch_episode'])):
+							execute_sql("update", table={"usersWatch"}, set={"last_watch_season": watch_season, "last_watch_episode": watch_episode}, where={"showId": user_history[0]['show_id'], "userId": user_id})
+							logger.debug("Users Watch Updated")
+							update_show(plex_id=plex_id)
+					except IndexError:
+						logger.debug("Not a Tagged Show")
+					except TypeError as e:
+						logger.debug('Error on line {}, {}. {}'.format(sys.exc_info()[-1].tb_lineno, type(e).__name__, e))
+					except Exception as e:
+						logger.error('Error on line {}, {}. {}'.format(sys.exc_info()[-1].tb_lineno, type(e).__name__, e))
+				except AttributeError:
+					pass
+			if not len(plex_api.sessions()):
+				logger.info("Nothing is Being Watched")
+		except Exception as e:
+			logger.error('Error on line {} - {} - {}'.format(type(e).__name__, sys.exc_info()[-1].tb_lineno, e))
+	else:
+		logger.error("Not Connected to Plex, Skipping Sessions Search")
 
 
 def recently_watched():
@@ -528,10 +534,11 @@ def refresh_database():
 		os.chmod(config.log_folder, 0o777)
 		try:
 			plex_api = PlexServer(config.plex_host, config.plex_api)
+		except Unauthorized:
+			logger.error("Can't Connect to Plex")
 		except Exception as e:
 			logger.error('Error on line {} - {} - {}'.format(type(e).__name__, sys.exc_info()[-1].tb_lineno, e))
 			plex_api = None
-			logger.error("Can't Connect to Plex")
 
 		try:
 			sdr = sodarr.API(config.sonarr_host + '/api/v3', config.sonarr_api)
