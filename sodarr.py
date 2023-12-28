@@ -1,8 +1,7 @@
-import config
 import logging
 import requests
 import sys
-import json
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -12,8 +11,8 @@ requests.adapters.DEFAULT_RETRIES = 5
 def get_sonarr_library():
 	"""Get sonarr library in a list of tvdb ids"""
 	library = []
-	headers = {'X-Api-Key': config.sonarr_api}
-	r = requests.get(config.sonarr_host + '/api/series', headers=headers, timeout=60)
+	headers = {'X-Api-Key': os.environ.get('SONARR_API_KEY')}
+	r = requests.get(os.environ.get('SONARR_HOST') + '/api/series', headers=headers, timeout=60)
 	try:
 		if r.status_code == 401:
 			logger.warning("Error when connecting to sonarr, unauthorised. check api/url")

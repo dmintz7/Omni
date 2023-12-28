@@ -1,5 +1,6 @@
-Flask==2.2.5
-Flask_APScheduler==1.12.4
-PlexAPI==4.13.4
-PyMySQL==1.0.3
-Requests>=2.31.0
+requests
+Flask_APScheduler
+PlexAPI
+Flask
+PyMySQL
+tqdm

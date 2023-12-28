@@ -2,25 +2,23 @@ import json
 import logging
 import os
 import sys
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import RotatingFileHandler
 
 from flask import Flask, request, make_response
 from flask_apscheduler import APScheduler
 
-import config
-
 formatter = logging.Formatter('%(asctime)s - %(levelname)10s - %(module)15s:%(funcName)30s:%(lineno)5s - %(message)s')
 logger = logging.getLogger()
 logging.getLogger('apscheduler.executors.default').setLevel(logging.WARNING)
-logger.setLevel(config.log_level.upper())
+logger.setLevel(os.environ.get('LOG_LEVEL').upper())
 consoleHandler = logging.StreamHandler(sys.stdout)
 consoleHandler.setFormatter(formatter)
-consoleHandler.setLevel(config.log_level.upper())
+consoleHandler.setLevel(os.environ.get('LOG_LEVEL').upper())
 logger.addHandler(consoleHandler)
 
-fileHandler = TimedRotatingFileHandler(os.path.join(config.log_folder, 'Omni.log'), when='midnight', backupCount=20)
+fileHandler = RotatingFileHandler('/app/logs/omni.log', maxBytes=1024 * 1024 * 5, backupCount=100)
 fileHandler.setFormatter(formatter)
-fileHandler.setLevel(config.log_level.upper())
+fileHandler.setLevel(os.environ.get('LOG_LEVEL').upper())
 logger.addHandler(fileHandler)
 
 import utils
@@ -60,7 +58,7 @@ def plex_webhook():
 		if event in ("media.scrobble", "library.new"):
 			item = content['Metadata']
 			logger.debug("Received Plex Webhook - %s - %s" % (event, item))
-			if item['librarySectionTitle'] == config.plex_library:
+			if item['librarySectionTitle'] == os.environ.get('PLEX_LIBRARY'):
 				if event == "media.scrobble":
 					user_id = [user['id'] for user in omni_users if user['username'] == content['Account']['title']][0]
 					plex_id = item['grandparentRatingKey']

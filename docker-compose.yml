@@ -11,4 +11,22 @@ services:
     environment:
       - TZ=UTC
       - LOG_LEVEL=INFO
+      - PLEX_HOST =
+      - PLEX_API_KEY =
+      - PLEX_LIBRARY =
+      - PLEX_MAX_RESULTS =
+      - SONARR_HOST = ""
+      - SONARR_API_KEY =
+      - SONARR_FROM_PROFILE =
+      - SONARR_TO_PROFILE =
+      - SONARR_TAG_ID =
+      - MIN_SEASON_EPISODES =
+      - MAX_SEASON_EPISODES =
+      - WATCH_SEASON_EPISODES =
+      - SEASON_PERCENT_COMPLETE =
+      - DB_HOST =
+      - DB_PORT =
+      - DB_USER = "service"
+      - DB_PASSWORD =
+      - DB_NAME =
     restart: unless-stopped
